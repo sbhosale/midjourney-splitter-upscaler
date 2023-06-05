@@ -1,0 +1,11 @@
+/node_modules
+/input
+/output
+/outputTest
+/upscaled
+/upscaledTest
+/build
+
+.DS_STORE
+.env
+extensions.md
