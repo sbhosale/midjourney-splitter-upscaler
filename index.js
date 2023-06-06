@@ -26,14 +26,15 @@ async function downloadImage(url, filename) {
         const response = await get(url, { responseType: 'arraybuffer' });
         if (response.status === 200) {
             const inputFolder = 'input';
+
+            if (!existsSync(inputFolder)) {
+                mkdirSync(inputFolder);
+            }
+
             const outputFolder = 'output';
 
             if (!existsSync(outputFolder)) {
                 mkdirSync(outputFolder);
-            }
-
-            if (!existsSync(inputFolder)) {
-                mkdirSync(inputFolder);
             }
 
             const inputFilePath = join(directory, inputFolder, filename);
@@ -97,7 +98,6 @@ client.on('messageCreate', async (message) => {
     }
 
     if (message.content.startsWith('history:')) {
-        console.log('here');
         const downloadQty = parseInt(message.content.split(':')[1]);
         const channel = message.channel;
         const messages = await channel.messages.fetch({ limit: downloadQty });
