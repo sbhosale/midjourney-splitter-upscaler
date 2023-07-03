@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import splitImage from './split.js';
 import dotenv from 'dotenv'
+import { config } from './config/index.js';
 dotenv.config()
 
 const PREFIX = "*";
@@ -25,16 +26,16 @@ async function downloadImage(url, filename) {
     try {
         const response = await get(url, { responseType: 'arraybuffer' });
         if (response.status === 200) {
-            const inputFolder = 'input';
+            const inputFolder = config.OUTPUT_GRID_4X4_FOLDER;
 
             if (!existsSync(inputFolder)) {
                 mkdirSync(inputFolder);
             }
 
-            const outputFolder = 'output';
+            const upscaledFolder = config.OUTPUT_UPSCALED_FOLDER;
 
-            if (!existsSync(outputFolder)) {
-                mkdirSync(outputFolder);
+            if (!existsSync(upscaledFolder)) {
+                mkdirSync(upscaledFolder);
             }
 
             const inputFilePath = join(directory, inputFolder, filename);
@@ -46,7 +47,7 @@ async function downloadImage(url, filename) {
                 await splitImage(inputFilePath);
 
             } else {
-                const outputFilePath = join(directory, outputFolder, filename);
+                const outputFilePath = join(directory, upscaledFolder, filename);
                 renameSync(inputFilePath, outputFilePath);
             }
 
@@ -60,6 +61,17 @@ async function downloadImage(url, filename) {
 client.on('ready', async () => {
     console.log('Bot connected');
     console.log(`Logged in as ${client.user.tag}!`);
+
+    const manual_split_4x4 = config.MANUAL_GRID_FOLDER;
+    if (!existsSync(manual_split_4x4)) {
+        mkdirSync(manual_split_4x4);
+    }
+
+    const manual_upscale_folder = config.MANUAL_UPSCALE_FOLDER;
+
+    if (!existsSync(manual_upscale_folder)) {
+        mkdirSync(manual_upscale_folder);
+    }
 });
 
 client.on('messageCreate', async (message) => {
@@ -91,7 +103,7 @@ client.on('messageCreate', async (message) => {
 
     const attachments = message.attachments;
     for (const attachment of attachments.values()) {
-        if (attachment.name.match(/\.(jpg|jpeg|png|gif)$/i)) {
+        if (attachment.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
             const filePrefix = message.content.includes('Upscaled by') ? 'UPSCALED_' : '';
             await downloadImage(attachment.url, `${filePrefix}${attachment.name}`);
         }

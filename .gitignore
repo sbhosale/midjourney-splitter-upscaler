@@ -5,6 +5,8 @@
 /upscaled
 /upscaledTest
 /build
+/_input
+/_output
 
 .DS_STORE
 .env

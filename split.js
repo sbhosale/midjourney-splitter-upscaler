@@ -2,12 +2,63 @@ import { createCanvas, loadImage } from 'canvas';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { upscaler } from './upscaler.js';
+import fs from 'fs';
+import chokidar from 'chokidar';
+import { config } from './config/index.js';
+import sharp from 'sharp';
+
+const watcherSplit = chokidar.watch(config.MANUAL_GRID_FOLDER, {ignored: /^\./, persistent: true, awaitWriteFinish: true});
+
+watcherSplit
+  .on('add', async function(path) {
+    if (!path.includes('.DS_Store')) {
+      console.log('File', path, 'has been added');
+      try {
+          await splitImage(path);
+          await fs.promises.copyFile(path, `${config.OUTPUT_GRID_4X4_FOLDER}/${path.split('/')[1]}`);
+          await fs.promises.unlink(path);
+          console.log('File', path, 'has been processed and deleted');
+      } catch (error) {
+        console.error(`Error processing or deleting file ${path}: `, error);
+      }
+    }
+  })
+  .on('change', function(path) {console.log('File', path, 'has been changed');})
+  .on('unlink', function(path) {console.log('File', path, 'has been removed');})
+  .on('error', function(error) {console.error('Error happened', error);})
+
+
+const watcherUpscale = chokidar.watch(config.MANUAL_UPSCALE_FOLDER, {ignored: /^\./, persistent: true, awaitWriteFinish: true});
+
+watcherUpscale
+  .on('add', async function(path) {
+    if (!path.includes('.DS_Store')) {
+      console.log('File', path, 'has been added');
+      try {
+          let outputFileName = path.split('/')[1];
+          await upscale(`./${path}`, outputFileName);
+          await fs.promises.unlink(path);
+          console.log('File', path, 'has been processed and deleted');
+      } catch (error) {
+        console.error(`Error processing or deleting file ${path}: `, error);
+      }
+    }
+  })
+  .on('change', function(path) {console.log('File', path, 'has been changed');})
+  .on('unlink', function(path) {console.log('File', path, 'has been removed');})
+  .on('error', function(error) {console.error('Error happened', error);});
 
 const regex = /[^_]+_([^_]+_[^_]+_[^_]+)_/;
 
+async function convertImage(imageFile) {
+  console.log('converting image...');
+
+}
+
 async function splitImage(imageFile) {
   console.log('spliting....');
-  const image = await loadImage(imageFile);
+  // const image = await loadImage(imageFile);
+  const image = await loadImage(await sharp(imageFile).toFormat('png').toBuffer());
   const width = image.width;
   const height = image.height;
   const midX = width / 2;
@@ -21,7 +72,7 @@ async function splitImage(imageFile) {
     return canvas;
   }
 
-  const outputFolder = 'output';
+  const outputFolder = config.OUTPUT_GRID_SPLIT_4X4_FOLDER;
 
   if (!existsSync(outputFolder)) {
     mkdirSync(outputFolder);
@@ -44,7 +95,7 @@ async function splitImage(imageFile) {
   for (let i = 0; i < croppedImages.length; i++) {
     console.log(`Adding Image ${i+1} of 4`);
     const buffer = croppedImages[i].toBuffer();
-    let outputFileName = `${fileName}_${imageNames[i]}.png`;
+    let outputFileName = `${fileName.split('.png')[0]}_${imageNames[i]}.png`;
     const outputPath = join(outputFolder, outputFileName);
     writeFileSync(outputPath, buffer);
     console.log(outputPath);
@@ -75,7 +126,6 @@ async function renameFile(text) {
 
 async function upscale(image, fileName) {
   await upscaler(image, fileName);
-
 }
 
 export default splitImage;

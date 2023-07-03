@@ -2,6 +2,7 @@ import Replicate from "replicate";
 import { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync, unlink } from 'fs';
 import https from 'https';
 import path from 'path';
+import { config } from './config/index.js';
 
 const replicate = new Replicate({
     // get your token from https://replicate.com/account
@@ -25,15 +26,12 @@ const upscaler = async function(source, fileName) {
     // const outputURL = 'https://replicate.delivery/pbxt/JzWInGkdqFpNOBK2gS1WBBSBXuWYoy6peZC9sQmDiXITZYhIA/output.png';
     console.log(outputURL);
     await saveUpscaledImg(outputURL, fileName);
-
-    // return output;
-
 }
 
 const saveUpscaledImg = async (processedURL, outputFileName) => {
     console.log('saving upscaled image to output dir');
 
-    const outputFolder = 'upscaled';
+    const outputFolder = config.OUTPUT_UPSCALED_FOLDER
 
     if (!existsSync(outputFolder)) {
         mkdirSync(outputFolder);
@@ -48,7 +46,7 @@ const saveUpscaledImg = async (processedURL, outputFileName) => {
 
         file.on('finish', () => {
             file.close();  // close() is async, call it after finish of writeStream
-            console.log(` ${outputFileName} downloaded successfully`);
+            console.log(` ${outputFileName} saved successfully`);
         });
     }).on('error', (error) => {
         unlink(dest);  // Delete the file async. (But we don't check the result)
