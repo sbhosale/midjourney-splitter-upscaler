@@ -6,6 +6,7 @@ import { createCanvas, Image, loadImage } from 'canvas';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import splitImage from './split.js';
+import { upscaler } from './upscaler.js';
 import dotenv from 'dotenv'
 import { config } from './config/index.js';
 dotenv.config()
@@ -45,10 +46,12 @@ async function downloadImage(url, filename) {
             if (!filename.startsWith('UPSCALED_')) {
                 const filePrefix = basename(filename, extname(filename));
                 await splitImage(inputFilePath);
-
+                console.log('here');
             } else {
-                const outputFilePath = join(directory, upscaledFolder, filename);
-                renameSync(inputFilePath, outputFilePath);
+                console.log('here1');
+                // const outputFilePath = join(directory, upscaledFolder, filename);
+                // renameSync(inputFilePath, outputFilePath);
+                await upscaler(inputFilePath, filename);
             }
 
             unlinkSync(inputFilePath);
@@ -104,7 +107,7 @@ client.on('messageCreate', async (message) => {
     const attachments = message.attachments;
     for (const attachment of attachments.values()) {
         if (attachment.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-            const filePrefix = message.content.includes('Upscaled by') ? 'UPSCALED_' : '';
+            const filePrefix = message.content.includes('Image #') ? 'UPSCALED_' : '';
             await downloadImage(attachment.url, `${filePrefix}${attachment.name}`);
         }
     }
