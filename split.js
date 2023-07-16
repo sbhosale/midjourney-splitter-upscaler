@@ -55,7 +55,7 @@ async function convertImage(imageFile) {
 
 }
 
-async function splitImage(imageFile) {
+async function splitImage(imageFile, skipScale) {
   console.log('spliting....');
   // const image = await loadImage(imageFile);
   const image = await loadImage(await sharp(imageFile).toFormat('png').toBuffer());
@@ -100,7 +100,9 @@ async function splitImage(imageFile) {
     writeFileSync(outputPath, buffer);
     console.log(outputPath);
 
-    await upscale(outputPath, outputFileName);
+    if (!skipScale) {
+      await upscale(outputPath, outputFileName);
+    }
   }
   
   return croppedImages;

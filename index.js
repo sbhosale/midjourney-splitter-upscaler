@@ -23,7 +23,13 @@ const client = new Client({ intents: [
 const __filename = fileURLToPath(import.meta.url);
 const directory = path.dirname(__filename);
 
-async function downloadImage(url, filename) {
+async function downloadImage(url, filename, messageArgs) {
+    let skipScale = messageArgs.includes('!noscale');
+    let skipSplit = messageArgs.includes('!nosplit');
+
+    if (skipSplit) console.log('Skipping splitting grid');
+    if (skipScale) console.log('Skipping image upscales');
+
     try {
         const response = await get(url, { responseType: 'arraybuffer' });
         if (response.status === 200) {
@@ -45,13 +51,15 @@ async function downloadImage(url, filename) {
 
             if (!filename.startsWith('UPSCALED_')) {
                 const filePrefix = basename(filename, extname(filename));
-                await splitImage(inputFilePath);
-                console.log('here');
+                if (!skipSplit) {
+                    await splitImage(inputFilePath, skipScale);
+                }
             } else {
-                console.log('here1');
                 // const outputFilePath = join(directory, upscaledFolder, filename);
                 // renameSync(inputFilePath, outputFilePath);
-                await upscaler(inputFilePath, filename);
+                if (!skipScale) {
+                    await upscaler(inputFilePath, filename);
+                }
             }
 
             unlinkSync(inputFilePath);
@@ -108,7 +116,7 @@ client.on('messageCreate', async (message) => {
     for (const attachment of attachments.values()) {
         if (attachment.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
             const filePrefix = message.content.includes('Image #') ? 'UPSCALED_' : '';
-            await downloadImage(attachment.url, `${filePrefix}${attachment.name}`);
+            await downloadImage(attachment.url, `${filePrefix}${attachment.name}`, message.content);
         }
     }
 
